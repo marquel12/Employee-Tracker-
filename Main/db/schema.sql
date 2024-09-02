@@ -1,18 +1,32 @@
-DROP DATABASE IF EXISTS movies_db;
-CREATE DATABASE movies_db;
+DROP DATABASE IF EXISTS employees_db;
+CREATE DATABASE employees_db;
 
-\c movies_db;
+\c employees_db;
 
-CREATE TABLE movies (
+CREATE TABLE department (
   id SERIAL PRIMARY KEY,
-  movie_name VARCHAR(100) NOT NULL
+  name VARCHAR(30) NOT NULL
 );
 
-CREATE TABLE reviews (
+CREATE TABLE role (
     id SERIAL PRIMARY KEY,
-    movie_id INT,
-    review TEXT NOT NULL,
-    FOREIGN KEY (movie_id)
-    REFERENCES movies(id)
-    ON DELETE SET NULL
+    title VARCHAR(30) NOT NULL
+    salary TEXT NOT NULL,
+    department INTEGER NOT NULL,
+    FOREIGN KEY (department)
+    REFERENCES department(id)
+    
 );
+
+CREATE TABLE employee(
+  id SERIAL PRIMARY KEY,
+  first_name VARCHAR(30) NOT NULL,
+  last_name VARCHAR(30) NOT NULL,
+  role_id INTEGER NOT NULL,
+  manager_id INTEGER, -- this is a self-referencing foreign key
+  FOREIGN KEY(role_id) 
+  REFERENCES role(id) -- this is a foreign key of role table
+
+
+
+)
