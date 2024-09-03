@@ -1,20 +1,21 @@
-DROP DATABASE IF EXISTS employees_db;
-CREATE DATABASE employees_db;
+DROP DATABASE IF EXISTS lakers_db;
+CREATE DATABASE lakers_db;
 
-\c employees_db;
+\c lakers_db;
 
 CREATE TABLE department (
   id SERIAL PRIMARY KEY,
   name VARCHAR(30) NOT NULL
 );
 
-CREATE TABLE role (
+CREATE TABLE role(
     id SERIAL PRIMARY KEY,
-    title VARCHAR(30) NOT NULL
-    salary TEXT NOT NULL,
-    department INTEGER NOT NULL,
-    FOREIGN KEY (department)
+    title VARCHAR(30) NOT NULL,
+    salary DECIMAL NOT NULL,
+    department_id INTEGER NOT NULL,
+    FOREIGN KEY (department_id)
     REFERENCES department(id)
+    ON DELETE SET NULL
     
 );
 
@@ -25,8 +26,10 @@ CREATE TABLE employee(
   role_id INTEGER NOT NULL,
   manager_id INTEGER, -- this is a self-referencing foreign key
   FOREIGN KEY(role_id) 
-  REFERENCES role(id) -- this is a foreign key of role table
-
+  REFERENCES role(id), -- this is a foreign key of role table
+  FOREIGN KEY(manager_id)
+  REFERENCES employee(id)
+  ON DELETE SET NULL
 
 
 )
