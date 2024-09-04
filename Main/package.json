@@ -12,7 +12,7 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.17.1",
-    "inquirer": "^10.1.8",
+    "inquirer": "^10.2.0",
     "pg": "^8.11.3"
   },
   "keywords": [],
