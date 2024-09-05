@@ -1,72 +1,114 @@
-import express from 'express'; // Import the express library for creating the server
+
 import inquirer from 'inquirer'; // Import the inquirer library for prompting the user
 // import { QueryResult } from 'pg';  // Import the QueryResult type from 'pg' for type-checking the result of a query
 
 import { pool, connectToDb } from './connection.js'; // Import the pool and connectToDb functions from the connection module
+import { QueryResult } from 'pg';
 
 await connectToDb();
-console.log('Connected to the database.');
-
-// const PORT = process.env.PORT || 3001;
 
 
-const app = express();
 
-// Express middleware
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
 
-// Create inquirer prompts
-const promptUser = async () => {
-    inquirer
-        .prompt([
-            {
-          
-              type: 'list',
-              name: 'menu',
-              message: 'What would you like to do?',
-              choices: [
-                  'View all departments',
-                  'View all roles',
-                  'View All Employees',
-                  'Add a department',
-                  'Add a role',
-                  'Add an employee',
-                  'Update an employee role',
-                  'Exit',
-              ],
-              
-}
-])
+const questions = () => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "menu",
+        message: "What would you like to do?",
+        choices: [
+          "View all departments",
+          "View all roles",
+          "View all employees",
+          "Add a department",
+          "Add a role",
+          "Add an employee",
+          "Update an employee role",
+          "Exit",
+        ],
+      },
+    ])
+
     .then((answers) => {
-    const { menu } = answers;
-    if (menu === 'View all departments') {
-        viewAllDepartments();
-    } 
-});
-}
-
-    const viewAllDepartments = () => {
-            const sql = 'SELECT * FROM departments';
-            pool.query(sql, (err, result) => { 
-                if (err) {
-                    console.log('Did not select departments');
-                    return;
-                }
-                const { rows } = result;
-                console.log({
-                    message: 'Successfully selected all departments',
-                    data: rows,
-                });
-               
-            }
-            );
-            promptUser();
-        }
-            
-        
-        
+      if (answers.menu === "View all departments") {
     
+        viewAllDepartments();
+      } else if (answers.menu === "View all roles") {
+        viewAllRoles();
+      } else if (answers.menu === "View all employees") {
+        viewAllEmployees();
+      } else if (answers.menu === "Add a department") {
+        addDepartment();
+        // } else if (answers.menu === 'Add a role') {
+        //     addRole();
+        // } else if (answers.menu === 'Add an employee') {
+        //     addEmployee();
+        // } else if (answers.menu === 'Update an employee role') {
+        //     updateEmployeeRole();
+      } else {
+        console.log("Goodbye!");
+        questions();
+      }
+    });
+
+  const viewAllDepartments = () => {
+    const sql = "SELECT * FROM department";
+    pool.query(sql, (err, result: QueryResult) => {
+      if (err) {
+        console.log("Did not select departments");
+        return;
+      }
+      console.table(result.rows);
+      questions();
+    });
+  };
+  const viewAllRoles = () => {
+    const sql = "SELECT * FROM role";
+    pool.query(sql, (err, result: QueryResult) => {
+      if (err) {
+        console.log("Did not select roles");
+        return;
+      }
+      console.table(result.rows);
+      questions();
+    });
+  };
+
+  const viewAllEmployees = () => {
+    const sql = "SELECT * FROM employee";
+    pool.query(sql, (err, result: QueryResult) => {
+      if (err) {
+        console.log("Did not select employees");
+        return;
+      }
+      console.table(result.rows);
+      questions();
+    });
+  };
+
+  const addDepartment = () => {
+    inquirer
+      .prompt({
+        type: "input",
+        name: "newDepartment",
+        message: "Enter the department name:",
+      })
+      .then((answers) => {
+        const sql = "INSERT INTO departments (name) VALUES ($1)";
+        const params = [answers.newDepartment];
+        pool.query(sql, params, (err, _result) => {
+          if (err) {
+            console.log("Did not add department");
+            return;
+          }
+          console.log("Department added successfully");
+          questions();
+        });
+      });
+  };
+};
+questions();
     
 
 
