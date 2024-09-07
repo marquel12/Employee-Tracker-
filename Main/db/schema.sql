@@ -5,17 +5,18 @@ CREATE DATABASE lakers_db;
 
 CREATE TABLE department (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(30) NOT NULL
+  name VARCHAR(30) UNIQUE NOT NULL
 );
 
 CREATE TABLE role(
     id SERIAL PRIMARY KEY,
-    title VARCHAR(30) NOT NULL,
+    title VARCHAR(30) UNIQUE NOT NULL ,-- this is a unique column which means that the title of the role must be unique
     salary DECIMAL NOT NULL,
     department_id INTEGER NOT NULL,
     FOREIGN KEY (department_id)
     REFERENCES department(id)
     ON DELETE SET NULL
+
     
 );
 

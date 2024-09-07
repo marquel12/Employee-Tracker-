@@ -33,20 +33,23 @@ const questions = () => {
         }
         else if (answers.menu === "Add a department") {
             addDepartment();
-            // } else if (answers.menu === 'Add a role') {
-            //     addRole();
-            // } else if (answers.menu === 'Add an employee') {
-            //     addEmployee();
-            // } else if (answers.menu === 'Update an employee role') {
-            //     updateEmployeeRole();
+        }
+        else if (answers.menu === 'Add a role') {
+            addRole();
+        }
+        else if (answers.menu === 'Add an employee') {
+            addEmployee();
+        }
+        else if (answers.menu === 'Update an employee role') {
+            updateEmployeeRole();
         }
         else {
             console.log("Goodbye!");
-            questions();
+            return;
         }
     });
     const viewAllDepartments = () => {
-        const sql = "SELECT * FROM department";
+        const sql = "SELECT department.id AS id, department.name AS name  FROM department";
         pool.query(sql, (err, result) => {
             if (err) {
                 console.log("Did not select departments");
@@ -57,7 +60,7 @@ const questions = () => {
         });
     };
     const viewAllRoles = () => {
-        const sql = "SELECT * FROM role";
+        const sql = "SELECT role.id AS id,role.title AS title,role.salary AS salary, department.name AS departments FROM role INNER JOIN department ON role.department_id=department.id"; // Select all columns from the role table 
         pool.query(sql, (err, result) => {
             if (err) {
                 console.log("Did not select roles");
@@ -68,7 +71,7 @@ const questions = () => {
         });
     };
     const viewAllEmployees = () => {
-        const sql = "SELECT * FROM employee";
+        const sql = "SELECT employee.first_name,employee.last_name,role.title,role.salary,department.name  AS department FROM employee INNER JOIN role ON employee.role_id=role.id INNER JOIN department ON role.department_id=department.id"; // Select all columns from the employee table
         pool.query(sql, (err, result) => {
             if (err) {
                 console.log("Did not select employees");
@@ -86,165 +89,91 @@ const questions = () => {
             message: "Enter the department name:",
         })
             .then((answers) => {
-            const sql = "INSERT INTO departments (name) VALUES ($1)";
+            const sql = "INSERT INTO department (name) VALUES ($1)";
             const params = [answers.newDepartment];
             pool.query(sql, params, (err, _result) => {
                 if (err) {
                     console.log("Did not add department");
-                    return;
+                    return questions();
                 }
                 console.log("Department added successfully");
                 questions();
             });
         });
     };
+    let departmentList = [];
+    pool.query('SELECT * FROM department', (err, result) => {
+        if (err) {
+            console.log('Did not select departments');
+            return;
+        }
+        departmentList = result.rows.map(row => row.name);
+    });
+    const addRole = () => {
+        inquirer.prompt([{
+                type: 'input',
+                name: 'title',
+                message: 'Enter the title of the role',
+            },
+            {
+                type: 'input',
+                name: 'salary',
+                message: 'Enter the salary of the role',
+            },
+            {
+                type: 'list',
+                name: 'department',
+                message: 'Which department does this role belong to?',
+                choices: departmentList,
+            },
+        ])
+            .then((answers) => {
+            const sql = 'INSERT INTO role (title, salary, ) VALUES ($1, $2,)';
+            const params = [answers.title, answers.salary, answers.department];
+            pool.query(sql, params, (err, _result) => {
+                if (err) {
+                    console.log('Did not add role');
+                    return questions();
+                }
+                console.log('Role added successfully');
+                questions();
+            });
+        });
+    };
+};
+const addEmployee = () => {
+    inquirer.prompt([{
+            type: 'input',
+            name: 'first_name',
+            message: 'Enter the first name of the employee',
+        },
+        {
+            type: 'input',
+            name: 'last_name',
+            message: 'Enter the last name of the employee',
+        },
+        {
+            type: 'input',
+            name: 'role_id',
+            message: 'Enter the role id of the employee',
+        },
+        {
+            type: 'input',
+            name: 'manager_id',
+            message: 'Enter the manager id of the employee',
+        },
+    ])
+        .then((answers) => {
+        const sql = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
+        const params = [answers.first_name, answers.last_name, answers.role_id, answers.manager_id];
+        pool.query(sql, params, (err, _result) => {
+            if (err) {
+                console.log('Did not add employee');
+                return questions();
+            }
+            console.log('Employee added successfully');
+            questions();
+        });
+    });
 };
 questions();
-//   if(answers.menu === 'View all roles') {
-//   const sql = `SELECT * FROM roles`;
-//   pool.query(sql, (err, result) => {
-//       if (err) {
-//           res.status(500).json({ error: err.message });
-//           return;
-//       }
-//       const { rows } = result;
-//       res.json({
-//           message: 'success',
-//           data: rows,
-//       });
-//       promptUser(); // Call the function again to display the menu
-//   });
-//   if(answers.menu === 'View all employees') {
-//   const sql = `SELECT * FROM employees`;
-//   pool.query(sql, (err, result) => {
-//       if (err) {
-//           res.status(500).json({ error: err.message });
-//           return;
-//       }
-//       const { rows } = result;
-//       res.json({
-//           message: 'success',
-//           data: rows,
-//       });
-//       promptUser();
-//   });
-//   };
-//   if(answers.menu === 'Add a department') {
-//   const answers = await inquirer.prompt(
-//       {
-//           type: 'input',
-//           name: 'newDepartment',
-//           message: {message:'Enter the department name:'},
-//       },
-//   );
-//   const sql = `INSERT INTO departments (newDepartment)
-//   VALUES ($1)`; 
-//   const params = [answers.newDepartment];
-//   pool.query(sql, params, (err, _result) => {
-//       if (err) {
-//           res.status(400).json({ error: err.message });
-//           return;
-//       }
-//       res.json({
-//           message: 'success',
-//           data: body,
-//       });
-//   });
-//   };
-// app.post('/api/new-movie', ({ body }, res) => {
-//     const sql = `INSERT INTO movies (movie_name)
-//     VALUES ($1)`;
-//     const params = [body.movie_name];
-//     pool.query(sql, params, (err, _result) => {
-//         if (err) {
-//             res.status(400).json({ error: err.message });
-//             return;
-//         }
-//         res.json({
-//             message: 'success',
-//             data: body,
-//         });
-//     });
-// });
-// // Read all movies
-// app.get('/api/movies', (_req, res) => {
-//     const sql = `SELECT id, movie_name AS title FROM movies`;
-//     pool.query(sql, (err, result) => {
-//         if (err) {
-//             res.status(500).json({ error: err.message });
-//             return;
-//         }
-//         const { rows } = result;
-//         res.json({
-//             message: 'success',
-//             data: rows,
-//         });
-//     });
-// });
-// // Delete a movie
-// app.delete('/api/movie/:id', (req, res) => {
-//     const sql = `DELETE FROM movies WHERE id = $1`;
-//     const params = [req.params.id];
-//     pool.query(sql, params, (err, result) => {
-//         if (err) {
-//             res.status(400).json({ error: err.message });
-//         }
-//         else if (!result.rowCount) {
-//             res.json({
-//                 message: 'Movie not found',
-//             });
-//         }
-//         else {
-//             res.json({
-//                 message: 'deleted',
-//                 changes: result.rowCount,
-//                 id: req.params.id,
-//             });
-//         }
-//     });
-// });
-// // Read list of all reviews and associated movie name using LEFT JOIN
-// app.get('/api/movie-reviews', (_req, res) => {
-//     const sql = `SELECT movies.movie_name AS movie, reviews.review FROM reviews LEFT JOIN movies ON reviews.movie_id = movies.id ORDER BY movies.movie_name;`;
-//     pool.query(sql, (err, result) => {
-//         if (err) {
-//             res.status(500).json({ error: err.message });
-//             return;
-//         }
-//         const { rows } = result;
-//         res.json({
-//             message: 'success',
-//             data: rows,
-//         });
-//     });
-// });
-// // BONUS: Update review
-// app.put('/api/review/:id', (req, res) => {
-//     const sql = `UPDATE reviews SET review = $1 WHERE id = $2`;
-//     const params = [req.body.review, req.params.id];
-//     pool.query(sql, params, (err, result) => {
-//         if (err) {
-//             res.status(400).json({ error: err.message });
-//         }
-//         else if (!result.rowCount) {
-//             res.json({
-//                 message: 'Review not found',
-//             });
-//         }
-//         else {
-//             res.json({
-//                 message: 'success',
-//                 data: req.body,
-//                 changes: result.rowCount,
-//             });
-//         }
-//     });
-// });
-// Default response for any other request (Not Found)
-//   app.use((_req, res) => {
-//       res.status(404).end();
-//   });
-//   app.listen(PORT, () => {
-//       console.log(`Server running on port ${PORT}`);
-//   }
-//   );
