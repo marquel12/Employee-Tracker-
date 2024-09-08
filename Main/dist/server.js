@@ -239,7 +239,7 @@ const updateEmployeeRole = () => {
                 .then((answers) => {
                 const sql = 'UPDATE employee SET role_id = $1 WHERE id = $2'; // Update the employee role in the employee table where the id is the id of the employee 
                 const params = [answers.role, answers.employee];
-                pool.query(sql, params, (err, result) => {
+                pool.query(sql, params, (err, _result) => {
                     if (err) {
                         console.log(answers);
                         console.log('Did not update employee role');
