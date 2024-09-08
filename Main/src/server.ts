@@ -190,7 +190,8 @@ const questions = () => {
           value: row.id
 
         }));
-        inquirer.prompt([{
+        inquirer.prompt([
+          {
           type: 'input',
           name: 'first_name',
           message: 'Enter the first name of the employee',
@@ -201,7 +202,6 @@ const questions = () => {
           message: 'Enter the last name of the employee',
         }, {
           type: 'list',
-
           name: 'role',
           message: 'Select the role',
           choices: roleList,
@@ -213,7 +213,8 @@ const questions = () => {
           choices: managerList,
         }
 
-        ]).then((answers) => {
+        ])
+        .then((answers) => {
           const sql = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
           const params = [answers.first_name, answers.last_name, answers.role, answers.manager];
           pool.query(sql, params, (err, _result) => {
@@ -225,7 +226,7 @@ const questions = () => {
             questions();
           });
         });
-        });
+      });
 
     });
 
@@ -243,23 +244,34 @@ const questions = () => {
 
 
 const updateEmployeeRole = () => {
-  let employeeList: string[] = [];
-  pool.query('SELECT * FROM employee', (err, result) => {
-    if (err) {
-      console.log('Did not select employees');
-      return;
-    }
-    employeeList = result.rows.map(row => `${row.first_name} ${row.last_name}`);
-  });
+  let employeeList: TableData[] = [];
+  let roleList: TableData[] = [];
 
-  let roleList: string[] = [];
   pool.query('SELECT * FROM role', (err, result) => {
     if (err) {
-      console.log('Did not select roles');
-      return;
+      console.log('Did not select departments');
+      questions();
     }
-    roleList = result.rows.map(row => row.title);
-  });
+
+    roleList = result.rows.map(row => ({
+      name: row.title,
+      value: row.id
+    }));
+    
+
+  pool.query('SELECT first_name, last_name, id FROM employee', (err, result) => {
+    if (err) {
+      console.log('Did not select employees');
+      questions();
+    }
+    employeeList = result.rows.map(row => ({
+      name: row.first_name + ' ' + row.last_name,
+      value: row.id
+
+    }));
+
+   
+
 
   inquirer.prompt([{
     type: 'list',
@@ -273,12 +285,14 @@ const updateEmployeeRole = () => {
     message: 'Select the new role',
     choices: roleList,
   },
+  
   ])
     .then((answers) => {
-      const sql = 'UPDATE employee SET role_id = (SELECT id FROM role WHERE title = $1) WHERE id = (SELECT id FROM employee WHERE first_name = $2)';
+      const sql = 'UPDATE employee SET role_id = $1 WHERE id = $2' // Update the employee role in the employee table where the id is the id of the employee 
       const params = [answers.role, answers.employee];
-      pool.query(sql, params, (err, _result) => {
+      pool.query(sql, params, (err, result:QueryResult) => {
         if (err) {
+          console.log(answers);
           console.log('Did not update employee role');
           return questions();
         }
@@ -286,7 +300,12 @@ const updateEmployeeRole = () => {
         questions();
       });
     });
+});
+
+  }
+  )
 }
+
 
 
 
