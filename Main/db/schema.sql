@@ -1,7 +1,7 @@
-DROP DATABASE IF EXISTS lakers_db;
-CREATE DATABASE lakers_db;
+DROP DATABASE IF EXISTS lakers_nba_db;
+CREATE DATABASE lakersnba_db;
 
-\c lakers_db;
+\c lakersnba_db;
 
 CREATE TABLE department (
   id SERIAL PRIMARY KEY,
