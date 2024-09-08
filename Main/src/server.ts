@@ -7,6 +7,10 @@ import { QueryResult } from 'pg';
 
 await connectToDb();
 
+interface TableData {
+  value: number;
+  name: string;
+}
 
 
 
@@ -76,11 +80,11 @@ const questions = () => {
   };
 
   const viewAllEmployees = () => {
-    const sql = "SELECT employee.first_name,employee.last_name,role.title,role.salary,department.name  AS department FROM employee INNER JOIN role ON employee.role_id=role.id INNER JOIN department ON role.department_id=department.id"; // Select all columns from the employee table
+    const sql = `SELECT e.first_name,e.last_name, role.title, role.salary,department.name AS department, CONCAT(m.first_name, ' ', m.last_name) AS manager  FROM employee e INNER JOIN role ON e.role_id=role.id INNER JOIN department ON role.department_id=department.id LEFT JOIN employee m ON e.manager_id=m.id`; // Select all columns from the employee table
     pool.query(sql, (err, result: QueryResult) => {
       if (err) {
         console.log("Did not select employees");
-        return;
+        questions();
       }
       console.table(result.rows);
       questions();
@@ -108,100 +112,185 @@ const questions = () => {
       });
 
   };
-
-  let departmentList: string[] = [];
-  pool.query('SELECT * FROM department', (err, result) => {
-    if (err) {
-      console.log('Did not select departments');
-      return;
-    }
-
-    departmentList = result.rows.map(row => row.name);
-  }
-  );
-
-
   const addRole = () => {
-    inquirer.prompt([{
-      type: 'input',
-      name: 'title',
-      message: 'Enter the title of the role',
-    },
-    {
-      type: 'input',
-      name: 'salary',
-      message: 'Enter the salary of the role',
-    },
-    {
-      type: 'list',
-      name: 'department',
-      message: 'Which department does this role belong to?',
-      choices: departmentList,
+    let departmentList: TableData[] = [];
+    pool.query('SELECT * FROM department', (err, result) => {
+      if (err) {
+        console.log('Did not select departments');
+        return;
+      }
 
-    },
-    ])
+      departmentList = result.rows.map(row => ({
+        name: row.name,
+        value: row.id
+      }));
 
-      .then((answers) => {
-        const sql = 'INSERT INTO role (title, salary, ) VALUES ($1, $2,)';
-        
 
-        const params = [answers.title, answers.salary, answers.department];
-        pool.query(sql, params, (err, _result) => {
-          if (err) {
-            console.log('Did not add role');
-            return questions();
-          }
-          console.log('Role added successfully');
-          questions();
+
+
+      inquirer.prompt([{
+        type: 'input',
+        name: 'title',
+        message: 'Enter the name of the role',
+      },
+      {
+        type: 'input',
+        name: 'salary',
+        message: 'Enter the salary of the role',
+      },
+      {
+        type: 'list',
+        name: 'department',
+        message: 'Which department does this role belong to?',
+        choices: departmentList,
+
+      },
+      ])
+
+        .then((answers) => {
+          const sql = 'INSERT INTO role (title, salary,department_id) VALUES ($1, $2,$3)'; // Insert the role into the role table with the title and salary this will be the values of the role
+
+          const params = [answers.title, answers.salary, answers.department];
+          pool.query(sql, params, (err, _result) => {
+            if (err) {
+              console.log('Did not add role');
+              return questions();
+            }
+            console.log('Role added successfully');
+            questions();
+          });
         });
-      });
+    }
+    )
   }
+
+  const addEmployee = () => {
+
+    let managerList: TableData[] = [];
+    let roleList: TableData[] = [];
+    pool.query('SELECT * FROM role', (err, result) => {
+      if (err) {
+        console.log('Did not select departments');
+        questions();
+      }
+
+      roleList = result.rows.map(row => ({
+        name: row.title,
+        value: row.id
+      }));
+      pool.query('SELECT first_name, last_name, id FROM employee', (err, result) => {
+        if (err) {
+          console.log('Did not select managers');
+          questions();
+        }
+
+
+        managerList = result.rows.map(row => ({
+          name: row.first_name + ' ' + row.last_name,
+          value: row.id
+
+        }));
+        inquirer.prompt([{
+          type: 'input',
+          name: 'first_name',
+          message: 'Enter the first name of the employee',
+        },
+        {
+          type: 'input',
+          name: 'last_name',
+          message: 'Enter the last name of the employee',
+        }, {
+          type: 'list',
+
+          name: 'role',
+          message: 'Select the role',
+          choices: roleList,
+        }, {
+
+          type: 'list',
+          name: 'manager',
+          message: 'Select the manager of the employee',
+          choices: managerList,
+        }
+
+        ]).then((answers) => {
+          const sql = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
+          const params = [answers.first_name, answers.last_name, answers.role, answers.manager];
+          pool.query(sql, params, (err, _result) => {
+            if (err) {
+              console.log('Did not add employee');
+              return questions();
+            }
+            console.log('Employee added successfully');
+            questions();
+          });
+        });
+        });
+
+    });
+
+
+  }
+
+
+
+
+
+
+
+
 }
 
-const addEmployee = () => {
+
+const updateEmployeeRole = () => {
+  let employeeList: string[] = [];
+  pool.query('SELECT * FROM employee', (err, result) => {
+    if (err) {
+      console.log('Did not select employees');
+      return;
+    }
+    employeeList = result.rows.map(row => `${row.first_name} ${row.last_name}`);
+  });
+
+  let roleList: string[] = [];
+  pool.query('SELECT * FROM role', (err, result) => {
+    if (err) {
+      console.log('Did not select roles');
+      return;
+    }
+    roleList = result.rows.map(row => row.title);
+  });
+
   inquirer.prompt([{
-    type: 'input',
-    name: 'first_name',
-    message: 'Enter the first name of the employee',
+    type: 'list',
+    name: 'employee',
+    message: 'Select the employee whose role you want to update',
+    choices: employeeList,
   },
   {
-    type: 'input',
-    name: 'last_name',
-    message: 'Enter the last name of the employee',
-  },
-  {
-    type: 'input',
-    name: 'role_id',
-    message: 'Enter the role id of the employee',
-  },
-  {
-    type: 'input',
-    name: 'manager_id',
-    message: 'Enter the manager id of the employee',
+    type: 'list',
+    name: 'role',
+    message: 'Select the new role',
+    choices: roleList,
   },
   ])
     .then((answers) => {
-
-      const sql = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
-      const params = [answers.first_name, answers.last_name, answers.role_id, answers.manager_id];
+      const sql = 'UPDATE employee SET role_id = (SELECT id FROM role WHERE title = $1) WHERE id = (SELECT id FROM employee WHERE first_name = $2)';
+      const params = [answers.role, answers.employee];
       pool.query(sql, params, (err, _result) => {
         if (err) {
-          console.log('Did not add employee');
+          console.log('Did not update employee role');
           return questions();
         }
-        console.log('Employee added successfully');
+        console.log('Employee role updated successfully');
         questions();
       });
-    }
-    )
+    });
 }
-
-
 
 
 
 questions();
-
 
 
 
