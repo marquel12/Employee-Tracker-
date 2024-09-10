@@ -40,10 +40,10 @@
 
 
 
-  ![How to start application in the terminal]()
+  ![How to start application in the terminal](image-5.png)
 
 
-  #### Click on [video]() to check out the functionality of the application. 
+  #### Click on [video](https://drive.google.com/file/d/1uBHcwI4_gnWxiF8OHLReand133aq7xFf/view) to check out the functionality of the application. 
   
 
   ## Contributing
